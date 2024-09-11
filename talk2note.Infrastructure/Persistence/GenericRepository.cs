@@ -39,14 +39,16 @@ namespace talk2note.Infrastructure.Persistence
             _context.SaveChanges();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
             var entity = await GetByIdAsync(id);
             if (entity != null)
             {
                 _dbSet.Remove(entity);
                 await _context.SaveChangesAsync();
+                return true; 
             }
+            return false;
         }
     }
 }

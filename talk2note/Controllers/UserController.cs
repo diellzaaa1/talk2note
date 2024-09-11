@@ -35,20 +35,14 @@ namespace talk2note.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserSignIn loginDto)
         {
-            try
-            {
                 var token = await _authService.LoginUserAsync(loginDto);
-                return Ok(new { token });
-            }
-            catch (Exception ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
+            return Ok(token);
+           
         
     }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetNoteById(int id)
+        public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id);
             if (user == null)

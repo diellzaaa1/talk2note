@@ -52,5 +52,20 @@ namespace talk2note.API.Controllers
             await _unitOfWork.CommitAsync();
             return Ok();
         }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNote(int id)
+        {
+            var deleted = await _unitOfWork.Notes.DeleteAsync(id);
+
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            return Ok();
+        }
+
     }
 }

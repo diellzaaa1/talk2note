@@ -12,7 +12,7 @@ namespace talk2note.Application.Interfaces
         Task<IEnumerable<T>> GetAllAsync();
         Task AddAsync(T entity);
         void Update(T entity);
-        Task DeleteAsync(int id);
+        Task <bool> DeleteAsync(int id);
     }
 
 }

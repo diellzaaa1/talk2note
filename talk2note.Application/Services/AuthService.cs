@@ -4,16 +4,19 @@ using talk2note.Application.DTO.User;
 using talk2note.Application.Interfaces;
 using talk2note.Domain.Entities;
 using BCrypt.Net;
+using talk2note.Application.Services.Auth0;
 
 namespace talk2note.Application.Services
 {
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IAuth0Service _auth0Service; // Inject IAuth0Service
 
-        public AuthService(IUserRepository userRepository)
+        public AuthService(IUserRepository userRepository, IAuth0Service auth0Service) // Inject it through constructor
         {
             _userRepository = userRepository;
+            _auth0Service = auth0Service;
         }
 
         public async Task RegisterUserAsync(UserSignUp registerDto)
@@ -44,7 +47,9 @@ namespace talk2note.Application.Services
                 throw new Exception("Invalid credentials");
             }
 
-            return TokenService.GenerateToken(loginDto.Email);
+            var token = await _auth0Service.GenerateTokenAsync();
+
+            return token;
         }
 
         private string HashPassword(string password)

@@ -1,65 +1,61 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 using talk2note.Application.Interfaces;
 using talk2note.Application.Services;
+using Microsoft.Extensions.Options;
+using talk2note.Application.Services.Auth0;
 using talk2note.API;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configure Auth0 settings
+builder.Services.Configure<Auth0Settings>(builder.Configuration.GetSection("Auth0"));
 
+// Add HttpClient
+builder.Services.AddHttpClient();
+
+// Add Application DI
+builder.Services.AddAppDI();
+
+// Add Controllers and Endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAppDI();
-builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}/";
-    options.Audience = builder.Configuration["Auth0:Audience"];
-    options.IncludeErrorDetails = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+// Configure Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuerSigningKey = true,
-        // Auth0 will provide the signing keys via JWKS endpoint
-        IssuerSigningKeyResolver = (token, securityToken, identifier, parameters) =>
-        {
-            var issuer = builder.Configuration["Auth0:Domain"];
-            var httpClient = new HttpClient();
-            var jwksUrl = $"{issuer}.well-known/jwks.json";
-            var jwks = httpClient.GetStringAsync(jwksUrl).Result;
-            var jwksKeys = new JsonWebKeySet(jwks);
-            return jwksKeys.Keys;
-        },
-        ValidateIssuer = true,
-        ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}/",
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["Auth0:Audience"],
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        options.Authority = $"{builder.Configuration["Auth0:Domain"]}/";
+        options.Audience = builder.Configuration["Auth0:Audience"];
 
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var errorMessage = context.Exception.Message;
+                Console.WriteLine($"Token validation failed: {errorMessage}");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+// Configure Swagger
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "Bearer"
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -69,17 +65,19 @@ builder.Services.AddSwaggerGen(options =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                }
+                },
             },
             Array.Empty<string>()
         }
     });
 });
 
+// Add Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Configure Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
