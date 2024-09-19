@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using talk2note.Application.Interfaces;
-using talk2note.Application.Services;
+using talk2note.Application.Services.Auth;
 using talk2note.Infrastructure.Data;
 using talk2note.Infrastructure.Persistence;
 using talk2note.Infrastructure.Repositories;
@@ -22,6 +22,7 @@ namespace talk2note.Infrastructure
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IAuthService, AuthService>();
 
 
 

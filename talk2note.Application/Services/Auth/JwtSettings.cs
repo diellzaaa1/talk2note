@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace talk2note.Application.Services.Auth0
+namespace talk2note.Application.Services.Auth
 {
-    public interface IAuth0Service
+    public class JwtSettings
     {
-        Task<string> GenerateTokenAsync();
+        public string Secret { get; set; }
     }
 
 }

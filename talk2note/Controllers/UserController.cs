@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using talk2note.Application.DTO.User;
 using talk2note.Application.Interfaces;
-using talk2note.Infrastructure.Persistence;
+using talk2note.Application.Services.UserService;
+
 
 namespace talk2note.API.Controllers
 {
@@ -12,11 +12,13 @@ namespace talk2note.API.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserService _userService;
 
-        public UserController(IAuthService authService, IUnitOfWork unitOfWork)
+        public UserController(IAuthService authService, IUnitOfWork unitOfWork,IUserService userService )
         {
             _authService = authService;
             _unitOfWork = unitOfWork;
+            _userService = userService;
         }
 
         [HttpPost("register")]
@@ -33,13 +35,12 @@ namespace talk2note.API.Controllers
             }
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(UserSignIn loginDto)
+        public async Task<IActionResult> Login(UserSignIn dto)
         {
-                var token = await _authService.LoginUserAsync(loginDto);
-            return Ok(token);
-           
-        
-    }
+            var token = await _authService.LoginAsync(dto);
+            return token != null ? Ok(new { Token = token }) : Unauthorized();
+        }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
@@ -51,5 +52,7 @@ namespace talk2note.API.Controllers
             }
             return Ok(user);
         }
+       
+     
     }
 }

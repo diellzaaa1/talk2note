@@ -1,51 +1,25 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
-using talk2note.Application.Interfaces;
-using talk2note.Application.Services;
 using Microsoft.Extensions.Options;
-using talk2note.Application.Services.Auth0;
+using talk2note.Application.Services.Auth;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Text;
 using talk2note.API;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Auth0 settings
-builder.Services.Configure<Auth0Settings>(builder.Configuration.GetSection("Auth0"));
-
-// Add HttpClient
+// Load JwtSettings from configuration
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddHttpClient();
-
-// Add Application DI
-builder.Services.AddAppDI();
-
-// Add Controllers and Endpoints
+builder.Services.AddAppDI(); // Your DI setup
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Configure Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = $"{builder.Configuration["Auth0:Domain"]}/";
-        options.Audience = builder.Configuration["Auth0:Audience"];
-
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                var errorMessage = context.Exception.Message;
-                Console.WriteLine($"Token validation failed: {errorMessage}");
-                return Task.CompletedTask;
-            }
-        };
-    });
-
-// Configure Swagger
+// Configure Swagger for JWT Authentication
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -72,6 +46,26 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Retrieve JwtSettings from DI and configure JWT Bearer authentication
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true
+    };
+});
+
 // Add Authorization
 builder.Services.AddAuthorization();
 
@@ -81,11 +75,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API v1");
+    });
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+app.UseAuthentication(); // Ensure authentication middleware is before authorization
 app.UseAuthorization();
 
 app.MapControllers();
