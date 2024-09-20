@@ -1,21 +1,30 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.Options;
 using talk2note.Application.Services.Auth;
-using Microsoft.IdentityModel.JsonWebTokens;
 using System.Text;
 using talk2note.API;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Load JwtSettings from configuration
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddHttpClient();
-builder.Services.AddAppDI(); // Your DI setup
+builder.Services.AddAppDI();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Swagger for JWT Authentication
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
@@ -46,8 +55,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Retrieve JwtSettings from DI and configure JWT Bearer authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+
+builder.Services.AddScoped<AuthTokenService>(sp => new AuthTokenService(jwtSecret));
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -64,14 +76,19 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false,
         ValidateLifetime = true
     };
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["GoogleKeys:ClientId"];
+    options.ClientSecret = builder.Configuration["GoogleKeys:ClientSecret"];
+    options.CallbackPath = "/auth/callback"; 
 });
 
-// Add Authorization
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -82,7 +99,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); // Ensure authentication middleware is before authorization
+app.UseCors("AllowAll");
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllers();

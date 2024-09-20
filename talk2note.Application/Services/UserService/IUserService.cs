@@ -13,6 +13,8 @@ namespace talk2note.Application.Services.UserService
         public  Task<bool> ChangePasswordAsync(int userId, ChangePassword changePasswordDto);
         Task<User> GetUserByCredentialsAsync(string email, string password);
 
+        public Task<User> GetOrCreateUserAsync(string email, string name);
+
 
     }
 }

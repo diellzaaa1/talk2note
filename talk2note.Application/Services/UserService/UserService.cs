@@ -57,6 +57,19 @@ namespace talk2note.Application.Services.UserService
             return null;
         }
 
+        public async Task<User> GetOrCreateUserAsync(string email, string name)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                user = new User { Email = email, Name = name };
+                await _userRepository.AddAsync(user);
+            }
+            await _unitOfWork.CommitAsync();
+
+            return user;
+        }
+
     }
 
 }
