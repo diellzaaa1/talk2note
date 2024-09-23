@@ -18,14 +18,14 @@ namespace talk2note.API.Controllers
         private readonly IAuthService _authService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
-        private readonly AuthTokenService _authTokenService; 
+        private readonly AuthTokenService _authTokenService;
 
         public UserController(IAuthService authService, IUnitOfWork unitOfWork, IUserService userService, AuthTokenService authTokenService)
         {
             _authService = authService;
             _unitOfWork = unitOfWork;
             _userService = userService;
-            _authTokenService = authTokenService; 
+            _authTokenService = authTokenService;
         }
 
         [HttpPost("register")]
@@ -91,12 +91,13 @@ namespace talk2note.API.Controllers
                 return Unauthorized();
 
             var userEmail = info.Principal.FindFirstValue(ClaimTypes.Email);
-            var userName = info.Principal.FindFirstValue(ClaimTypes.Name);
+            var userName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? "Default Name"; // Provide a fallback name
 
             var user = await _userService.GetOrCreateUserAsync(userEmail, userName);
-            var token =  _authTokenService.GenerateToken(user);
+            var token = _authTokenService.GenerateToken(user);
 
             return Ok(new { Token = token });
         }
+
     }
 }

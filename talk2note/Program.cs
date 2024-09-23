@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
-using talk2note.Application.Services.Auth;
 using System.Text;
 using talk2note.API;
+using talk2note.Application.Services.Auth;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +12,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddAppDI();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 
 
 builder.Services.AddCors(options =>
@@ -86,6 +87,7 @@ builder.Services.AddAuthentication(options =>
 
 
 builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 

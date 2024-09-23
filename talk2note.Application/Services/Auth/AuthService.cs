@@ -7,22 +7,22 @@ namespace talk2note.Application.Services.Auth
 {
     public class AuthService : IAuthService
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly AuthTokenService _jwtTokenService;
         private readonly IUserService _userService;
 
-        public AuthService(IUserRepository userRepository, AuthTokenService jwtTokenService,IUserService userService)
+        public AuthService(IUnitOfWork unitOfWork, AuthTokenService jwtTokenService, IUserService userService)
         {
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
-            _userService= userService ?? throw new ArgumentNullException( nameof(userService));
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
         public async Task RegisterUserAsync(UserSignUp registerDto)
         {
             if (registerDto == null) throw new ArgumentNullException(nameof(registerDto));
 
-            var existingUser = await _userRepository.GetByEmailAsync(registerDto.Email);
+            var existingUser = await _unitOfWork.Users.GetByEmailAsync(registerDto.Email);
             if (existingUser != null)
             {
                 throw new Exception("User already exists");
@@ -32,12 +32,12 @@ namespace talk2note.Application.Services.Auth
             {
                 Name = registerDto.Name,
                 Email = registerDto.Email,
-                Username = registerDto.Username,
                 PasswordHash = HashPassword(registerDto.PasswordHash),
                 CreatedAt = registerDto.CreatedAt
             };
 
-            await _userRepository.AddAsync(user);
+            await _unitOfWork.Users.AddAsync(user); 
+            await _unitOfWork.CommitAsync(); 
         }
 
         public async Task<string> LoginAsync(UserSignIn dto)
@@ -46,8 +46,8 @@ namespace talk2note.Application.Services.Auth
 
             var user = await _userService.GetUserByCredentialsAsync(dto.Email, dto.Password);
             if (user != null)
-            {   
-                    return _jwtTokenService.GenerateToken(user);  
+            {
+                return _jwtTokenService.GenerateToken(user);
             }
             throw new UnauthorizedAccessException("User not found.");
         }

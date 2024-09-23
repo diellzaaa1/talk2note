@@ -1,12 +1,12 @@
-﻿
-using talk2note.Domain.Entities;
-
-namespace talk2note.Application.Interfaces
+﻿namespace talk2note.Application.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        IGenericRepository<Note> Notes { get; }
-        IGenericRepository<User> Users { get; }
+        INoteRepository Notes { get; } 
+        IUserRepository Users { get; } 
+        IFolderRepository Folders { get; } 
+        ITagRepository Tags { get; }
+        INoteToDoRepository NotesToDo { get; }
         Task<int> CommitAsync();
        
     }

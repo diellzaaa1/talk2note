@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using talk2note.Application.Interfaces;
 using talk2note.Infrastructure.Data;
 
@@ -14,6 +12,7 @@ namespace talk2note.Infrastructure.Persistence
         public GenericRepository(AppDbContext context)
         {
             _context = context;
+            Console.WriteLine($"GenericRepository<{typeof(T).Name}> created.");
             _dbSet = context.Set<T>();
         }
 
@@ -30,13 +29,11 @@ namespace talk2note.Infrastructure.Persistence
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
         }
 
         public void Update(T entity)
         {
             _dbSet.Update(entity);
-            _context.SaveChanges();
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -45,10 +42,15 @@ namespace talk2note.Infrastructure.Persistence
             if (entity != null)
             {
                 _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
-                return true; 
+                return true;
             }
             return false;
+        }
+        public async Task<IEnumerable<T>> GetByUserIdAsync(int userId)
+        {
+            return await _dbSet
+                .Where(e => EF.Property<int>(e, "UserId") == userId)
+                .ToListAsync();
         }
     }
 }

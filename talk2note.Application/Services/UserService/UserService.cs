@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
-using talk2note.Application.DTO.User;
+﻿using talk2note.Application.DTO.User;
 using talk2note.Application.Interfaces;
 using talk2note.Domain.Entities;
 
@@ -9,13 +7,12 @@ namespace talk2note.Application.Services.UserService
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IUserRepository _userRepository;
 
 
-        public UserService(IUnitOfWork unitOfWork, IUserRepository userRepository)
+        public UserService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _userRepository = userRepository;
+         
         }
 
         public async Task<bool> ChangePasswordAsync(int userId, ChangePassword changePasswordDto)
@@ -47,7 +44,7 @@ namespace talk2note.Application.Services.UserService
         }
         public async Task<User> GetUserByCredentialsAsync(string email, string password)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            var user = await _unitOfWork.Users.GetByEmailAsync(email);
 
             if (user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
@@ -59,11 +56,11 @@ namespace talk2note.Application.Services.UserService
 
         public async Task<User> GetOrCreateUserAsync(string email, string name)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            var user = await _unitOfWork.Users.GetByEmailAsync(email);
             if (user == null)
             {
                 user = new User { Email = email, Name = name };
-                await _userRepository.AddAsync(user);
+                await _unitOfWork.Users.AddAsync(user);
             }
             await _unitOfWork.CommitAsync();
 
