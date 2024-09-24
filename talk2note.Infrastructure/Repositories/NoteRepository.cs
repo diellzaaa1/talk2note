@@ -28,5 +28,6 @@ namespace talk2note.Infrastructure.Repositories
                 .Where(note => note.FolderId == folderId) 
                 .ToListAsync();
         }
+     
     }
 }

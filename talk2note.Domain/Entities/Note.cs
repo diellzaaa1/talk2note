@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace talk2note.Domain.Entities
+﻿namespace talk2note.Domain.Entities
 {
     public class Note
     {
@@ -20,6 +14,9 @@ namespace talk2note.Domain.Entities
         public bool IsArchived { get; set; } = false;
 
         public virtual ICollection<NoteTag> NoteTags { get; set; } = new List<NoteTag>();
+
+        public string? Password {  get; set; }
+
 
 
     }

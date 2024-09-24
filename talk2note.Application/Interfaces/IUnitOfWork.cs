@@ -7,6 +7,7 @@
         IFolderRepository Folders { get; } 
         ITagRepository Tags { get; }
         INoteToDoRepository NotesToDo { get; }
+        INoteTagRepository NoteTags { get; }
         Task<int> CommitAsync();
        
     }

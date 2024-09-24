@@ -17,7 +17,7 @@ namespace talk2note.Application.Services.NoteService
         {
             return await _unitOfWork.Notes.GetByIdAsync(id);
         }
-
+  
         public async Task<Note> AddNoteAsync(NoteDTO noteDto)
         {
             var note = new Note
@@ -89,5 +89,70 @@ namespace talk2note.Application.Services.NoteService
         {
             return await _unitOfWork.Notes.GetByFolderIdAsync(folderId);
         }
+
+        public async Task LockNoteAsync(Note note, string password)
+        {
+            note.Password = BCrypt.Net.BCrypt.HashPassword(password);
+             _unitOfWork.Notes.Update(note);
+            await _unitOfWork.CommitAsync();    
+        }
+
+        public async Task<bool> UnlockNoteAsync(Note note, string password)
+        {
+            if (note.Password == null) return true; 
+
+            return BCrypt.Net.BCrypt.Verify(password, note.Password);
+        }
+
+        public async Task ArchiveNoteAsync(int noteId)
+        {
+            var note = await _unitOfWork.Notes.GetByIdAsync(noteId);
+            if (note == null)
+            {
+                throw new Exception("Note not found");
+            }
+
+            note.IsArchived = true;
+
+            _unitOfWork.Notes.Update(note);
+            await _unitOfWork.CommitAsync();
+        }
+        public async Task AddTagToNoteAsync(int noteId, string tagName, int userId)
+        {
+            var note = await _unitOfWork.Notes.GetByIdAsync(noteId);
+            if (note == null)
+            {
+                throw new Exception("Note not found");
+            }
+
+            var tag = await _unitOfWork.Tags.GetByNameAsync(tagName, userId);
+            if (tag == null)
+            {
+                tag = new Tag
+                {
+                    Name = tagName,
+                    UserId = userId
+                };
+
+                await _unitOfWork.Tags.AddAsync(tag);
+                await _unitOfWork.CommitAsync();
+            }
+
+            var existingNoteTag = await _unitOfWork.NoteTags.GetByNoteAndTagAsync(noteId, tag.TagId);
+            if (existingNoteTag != null)
+            {
+                throw new Exception("Note already has this tag");
+            }
+
+            var noteTag = new NoteTag
+            {
+                NoteId = noteId,
+                TagId = tag.TagId
+            };
+
+            _unitOfWork.NoteTags.AddAsync(noteTag);
+            await _unitOfWork.CommitAsync();
+        }
+      
     }
 }

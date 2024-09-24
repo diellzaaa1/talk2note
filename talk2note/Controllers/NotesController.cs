@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using talk2note.Application.DTO.Note;
+using talk2note.Application.DTO.Tag;
 using talk2note.Application.Services.NoteService;
 using talk2note.Domain.Entities;
 
@@ -95,5 +96,58 @@ namespace talk2note.API.Controllers
 
             return Ok(notes);
         }
+        [HttpPost("lock/{noteId}")]
+        public async Task<IActionResult> LockNoteAsync(int noteId, [FromBody] LockNoteRequest request)
+        {
+            var note = await _noteService.GetNoteByIdAsync(noteId);
+            if (note == null) return NotFound();
+
+            await _noteService.LockNoteAsync(note, request.Password);
+            return Ok();
+        }
+
+        [HttpPost("unlock/{noteId}")]
+        public async Task<IActionResult> UnlockNoteAsync(int noteId, [FromBody] UnlockNoteRequest request)
+        {
+            var note = await _noteService.GetNoteByIdAsync(noteId);
+            if (note == null) return NotFound();
+
+            bool isUnlocked = await _noteService.UnlockNoteAsync(note, request.Password);
+            if (!isUnlocked) return Unauthorized("Invalid password");
+
+            return Ok(note);
+        }
+
+        [HttpPost("{noteId}/archive")]
+        public async Task<IActionResult> ArchiveNoteAsync(int noteId)
+        {
+            try
+            {
+                await _noteService.ArchiveNoteAsync(noteId);
+                return Ok("Note archived successfully");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("{noteId}/add-tag")]
+        public async Task<IActionResult> AddTagToNoteAsync(int noteId, [FromBody] TagDTO tagDto)
+        {
+            try
+            {
+                await _noteService.AddTagToNoteAsync(noteId, tagDto.Name, tagDto.UserId);
+                return Ok("Tag added successfully");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
     }
+
+
 }

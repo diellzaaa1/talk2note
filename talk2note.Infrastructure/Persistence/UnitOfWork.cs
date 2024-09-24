@@ -14,6 +14,8 @@ namespace talk2note.Infrastructure.Persistence
         public ITagRepository Tags { get; private set; }
 
         public INoteToDoRepository NotesToDo { get; private set; }
+        public INoteTagRepository NoteTags { get; private set; }
+
 
         public UnitOfWork(AppDbContext context)
         {
@@ -23,6 +25,7 @@ namespace talk2note.Infrastructure.Persistence
             Folders = new FolderRepository(_context);
             Tags = new TagRepository(_context);
             NotesToDo= new NoteToDoRepository(_context);
+            NoteTags = new NoteTagRepository(_context);
         }
 
         public async Task<int> CommitAsync()
