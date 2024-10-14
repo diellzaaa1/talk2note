@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 using talk2note.API;
 using talk2note.Application.Services.Auth;
@@ -7,9 +8,12 @@ using talk2note.Application.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddHttpClient();
 builder.Services.AddAppDI();
+var redisConfiguration = builder.Configuration.GetValue<string>("Redis:Configuration");
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 

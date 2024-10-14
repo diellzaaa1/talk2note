@@ -1,16 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using talk2note.Application.Interfaces;
-using talk2note.Infrastructure.Repositories;
 
 namespace talk2note.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TagsController : ControllerBase
+    public class TagController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public TagsController(IUnitOfWork unitOfWork)
+        public TagController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;   
                 

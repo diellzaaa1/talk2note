@@ -1,4 +1,5 @@
-﻿using talk2note.Application.DTO.Note;
+﻿using Elasticsearch.Net;
+using talk2note.Application.DTO.Note;
 using talk2note.Application.Interfaces;
 using talk2note.Domain.Entities;
 
@@ -7,10 +8,13 @@ namespace talk2note.Application.Services.NoteService
     public class NoteService : INoteService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IElasticsearchService _elasticsearchService;
 
-        public NoteService(IUnitOfWork unitOfWork)
+        public NoteService(IUnitOfWork unitOfWork,IElasticsearchService elasticsearchService)
         {
             _unitOfWork = unitOfWork;
+            _elasticsearchService = elasticsearchService;
+
         }
 
         public async Task<Note> GetNoteByIdAsync(int id)
@@ -33,6 +37,8 @@ namespace talk2note.Application.Services.NoteService
 
             await _unitOfWork.Notes.AddAsync(note);
             await _unitOfWork.CommitAsync();
+            await _elasticsearchService.IndexDocumentAsync(note);
+
             return note;
         }
 
@@ -48,13 +54,23 @@ namespace talk2note.Application.Services.NoteService
 
             _unitOfWork.Notes.Update(note);
             await _unitOfWork.CommitAsync();
+            await _elasticsearchService.IndexDocumentAsync(note);
+
             return true;
         }
 
         public async Task<bool> DeleteNoteAsync(int id)
         {
-            return await _unitOfWork.Notes.DeleteAsync(id);
+            await _unitOfWork.Notes.DeleteAsync(id);
+
+            await _unitOfWork.CommitAsync();
+
+            await _elasticsearchService.DeleteDocumentAsync(id);
+
+            return true; 
         }
+
+
 
         public async Task<IEnumerable<Note>> GetAllNotesAsync()
         {
@@ -76,7 +92,10 @@ namespace talk2note.Application.Services.NoteService
 
             existingNote.FolderId = folderId;
             _unitOfWork.Notes.Update(existingNote);
+
             await _unitOfWork.CommitAsync();
+            await _elasticsearchService.IndexDocumentAsync(existingNote);
+
             return true;
         }
 
@@ -152,7 +171,9 @@ namespace talk2note.Application.Services.NoteService
 
             _unitOfWork.NoteTags.AddAsync(noteTag);
             await _unitOfWork.CommitAsync();
+            await _elasticsearchService.IndexDocumentAsync(note);
+
         }
-      
+
     }
 }

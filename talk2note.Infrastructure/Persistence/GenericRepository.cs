@@ -12,7 +12,6 @@ namespace talk2note.Infrastructure.Persistence
         public GenericRepository(AppDbContext context)
         {
             _context = context;
-            Console.WriteLine($"GenericRepository<{typeof(T).Name}> created.");
             _dbSet = context.Set<T>();
         }
 
