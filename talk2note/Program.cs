@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddHttpClient();
-builder.Services.AddAppDI();
+builder.Services.AddAppDI(builder.Configuration);
 var redisConfiguration = builder.Configuration.GetValue<string>("Redis:Configuration");
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
 builder.Services.AddControllers();

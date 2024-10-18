@@ -5,9 +5,9 @@ namespace talk2note.API
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddAppDI(this IServiceCollection services)
+        public static IServiceCollection AddAppDI(this IServiceCollection services,IConfiguration configuration)
         {
-            services.AddApplicationDI()
+            services.AddApplicationDI(configuration)
                 .AddInfrastructureDI();
           
             return services;

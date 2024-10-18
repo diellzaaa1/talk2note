@@ -19,6 +19,7 @@ namespace talk2note.Application.Services.NoteService
                 Task LockNoteAsync(Note note, string password);
                 Task ArchiveNoteAsync(int noteId);
                Task AddTagToNoteAsync(int noteId, string tagName, int userId);
+                Task ShareNote(int  userId, int noteId,string toEmail);
          
 
     }

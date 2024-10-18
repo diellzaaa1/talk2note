@@ -1,6 +1,7 @@
-﻿using Elasticsearch.Net;
+﻿using Microsoft.AspNetCore.Identity.UI.Services;
 using talk2note.Application.DTO.Note;
 using talk2note.Application.Interfaces;
+using talk2note.Application.Services.EmailService;
 using talk2note.Domain.Entities;
 
 namespace talk2note.Application.Services.NoteService
@@ -9,11 +10,13 @@ namespace talk2note.Application.Services.NoteService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IElasticsearchService _elasticsearchService;
+        private readonly IMailService _emailService;
 
-        public NoteService(IUnitOfWork unitOfWork,IElasticsearchService elasticsearchService)
+        public NoteService(IUnitOfWork unitOfWork,IElasticsearchService elasticsearchService,IMailService emailService)
         {
             _unitOfWork = unitOfWork;
             _elasticsearchService = elasticsearchService;
+            _emailService = emailService;
 
         }
 
@@ -174,6 +177,54 @@ namespace talk2note.Application.Services.NoteService
             await _elasticsearchService.IndexDocumentAsync(note);
 
         }
+        public async Task ShareNote(int userId, int noteId, string toEmail)
+        {
+            // Fetch user from the database
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new Exception("User not found.");
+            }
+
+            // Fetch the note from the database
+            var note = await _unitOfWork.Notes.GetByIdAsync(noteId);
+            if (note == null)
+            {
+                throw new Exception("Note not found.");
+            }
+
+            // Prepare email subject and message
+            string subject = $"A Note Has Been Shared With You: '{note.Title}'";
+
+            string message = $@"
+       <html>
+    <body style='font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4;'>
+        <div style='background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);'>
+           <h2 style='color: #333;'>You’ve Got a Note!</h2>
+<p>A note titled <strong>{note.Title}</strong> has been shared with you by <strong>{user.Name}</strong>. Check it out below!</p>
+
+            <div style='padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;'>
+                <h3 style='margin: 0; color: #333;'>{note.Title}</h3>
+                <p style='margin: 10px 0; color: #333;'>{note.Content}</p> 
+            </div>
+          
+            <p style='font-size: 12px; color: #777; margin-top: 20px;'>© 2024 Talk2Note. All rights reserved.</p>
+        </div>
+    </body>
+    </html>";
+
+            try
+            {
+                await _emailService.SendEmailAsync(toEmail, subject, message);
+            }
+            catch (Exception ex)
+            {
+               
+                throw new Exception("An error occurred while sending the email. Please try again later.", ex);
+            }
+        }
+
+
 
     }
 }

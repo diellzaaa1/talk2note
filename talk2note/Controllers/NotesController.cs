@@ -145,6 +145,19 @@ namespace talk2note.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpPost("share")]
+        public async Task<IActionResult> ShareNote(int userId, int noteId, string toEmail)
+        {
+            try
+            {
+                await _noteService.ShareNote(userId, noteId, toEmail);
+                return Ok("Note shared successfully.");
+        }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+    }
+}
 
 
 
